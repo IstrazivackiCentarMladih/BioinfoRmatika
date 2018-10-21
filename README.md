@@ -1,0 +1,2 @@
+# BioinfoRmatika
+Ovo treba updejtat
