@@ -1,0 +1,591 @@
+---
+title: "BioinoRmatika"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  
+---
+
+1. INTRODUCTION
+
+This is R notebook. 
+
+First, let's learn few elementary things in R programming language. 
+
+This is a chunck. Here is where we will write a lines of code which will be executed. We will execute chunks by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. We can add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*
+
+```{r}
+
+```
+
+
+```{r}
+# This is comment. It serves as explanation for the source code. It is not meant to be executed. 
+
+my_first_variable = 13 # This is my first variable. Variables are used to store information for its further use. For example, numbers (integers) can be stored in variables. 
+
+my_second_variable = "D" # Letters can also be stored in variables in form of strings. String is composed of characters.
+
+
+my_third_variable = "String"
+my_fourth_variable = "13" # Numbers can also written as strings. 
+
+```
+
+
+```{r}
+my_first_variable + 6
+#my_fourth_variable + 6 # But, then we can not perform mathematical operations, such as addition, with said variables. 
+```
+
+
+```{r}
+my_first_vector = c(1, 2, 3) # Vector is a collection of elements. We can store integers in vectors. 
+
+my_second_vector = c("GV", "cf", "!.") # And strings as well. 
+
+my_first_vector[2] # We can fetch vector elements by indexing (putting one or more indexes in brackets)
+```
+
+```{r}
+# If we want to print variable's value
+my_first_vector 
+```
+
+```{r}
+# Adding new elements to the vectors:
+
+my_first_vector = c(my_first_vector, 123)
+```
+
+
+2. BIOLOGICAL SEQUENCES
+
+Next, we will focuse in type of variables and operations used for storage of biological sequences. 
+
+
+We have previously installed packages called Biostrings and GenomicRanges using following code:
+
+```{r}
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("Biostrings")
+#biocLite("GenomicRanges")
+```
+
+Biostrings defines containers and provides functions for genome sequence data and GenomicRanges handles genomic	interval sets.
+
+Next, we will load packages: 
+
+```{r}
+require(Biostrings)
+require(GenomicRanges)
+```
+
+
+We can store DNA sequence in variable "my_string" as a string:
+
+```{r}
+my_string = "CTGT"
+
+my_string
+```
+
+
+However, in package Biostrings we can defined object of DNA String type:
+
+```{r}
+my_first_dna_string = DNAString("CTGTCGCGCTGCGTGCGTTGTGGGGCGTGCGTGCCCCCGCGGCG") # function is called DNAString
+
+my_first_dna_string
+```
+
+
+We use toString function to compute string from DNA String:
+
+```{r}
+toString(my_first_dna_string)
+```
+
+Allowed symbols are letters from IUPAC code for incomplete nucleic acid specification. In addition, some other symbols are allowed. This is one of the differences between DNA Strings and other strings.
+
+```{r}
+#my_dna_string = DNAString("QXZ")
+```
+
+
+If we type in following line, we can see symbols which use in allowed in DNA Strings: 
+
+```{r}
+DNA_ALPHABET
+```
+
+
+Following line allows us to see symbols which use in allowed in AA Strings (protein sequences): 
+
+```{r}
+AA_ALPHABET 
+```
+
+
+Now, we can try to use additional symbols (for example "-") in DNA Strings:
+
+```{r}
+my_second_dna_string = DNAString("TTGAAA-CTCTGCGTCT")
+
+my_second_dna_string
+```
+
+
+In continuation, we will use function from Biostrigs package to gather information about defined DNA Strings and we will manipulate DNA Strings.
+
+Function alphabetFrequency will provide information about composition.
+
+```{r}
+alphabetFrequency(my_first_dna_string) # Given a biological sequence, computes the frequency of each letter
+```
+
+
+If we define argument baseOnly as TRUE, result will include only nucleotides (A, C, G, T for DNA) (other symbols will be in "other" category).
+In addition, with argument as.prob, values will be written in percentages. 
+
+```{r}
+alphabetFrequency(my_first_dna_string, baseOnly = TRUE, as.prob = TRUE)
+```
+
+
+```{r}
+length(my_first_dna_string) # length of the sequence
+```
+
+Subsetting of DNA String: 
+
+```{r}
+my_first_dna_string[1] # base at first position in the DNA String (as DNA String)
+
+my_first_dna_string[1:3] # from the first to the third position
+```
+
+Other way:
+
+```{r}
+# it is recomended to use subseq 
+
+subseq(my_first_dna_string, 1, 1)
+
+subseq(my_first_dna_string, 1, 3)
+```
+
+Storage of multiple DNA Strings:
+
+```{r}
+my_first_dna_string_set = DNAStringSet(c("ACGTAAATCTC", "GTCAATCTA", "GCTATCTCATC")) # a set of DNA strings
+my_first_dna_string_set
+```
+
+Subsetting of DNA String Set:
+
+```{r}
+my_first_dna_string_set[2] # as DNA String Set instance(of length 1)
+```
+
+```{r}
+my_first_dna_string_set[[2]] # as DNA String instance
+```
+
+
+```{r}
+codons(my_first_dna_string_set[[2]]) #codon of the second sequence in DNA String Set
+```
+
+Basic operation with DNA Strings:
+
+Reverse complement
+```{r}
+reverseComplement(my_first_dna_string)
+```
+
+Task no. 1
+
+Read in following DNA sequence as DNA String: ATGTACGTCGTCGGTAATTTCATTTAA. Determine the frequency of nucleotide A in the sequence (tip: search the information about the letterFrequency function). 
+
+```{r}
+DNA_seq_1 = DNAString("ATGTACGTCGTCGGTAATTTCATTTAA")
+
+?letterFrequency # finding information about said function 
+
+letterFrequency(DNA_seq_1, "A", as.prob = TRUE) 
+```
+
+
+Task no. 2
+
+Transcribe DNA sequence from 1. task into RNA. Then, translate given sequence into protein. 
+
+```{r}
+RNA_seq_1 = RNAString(DNA_seq_1) # turns tymine (T) into uracil (U)
+RNA_seq_1
+```
+
+However, function "translate" can operate on both DNA and RNA Strings:
+
+```{r}
+translate(RNA_seq_1)
+translate(DNA_seq_1)
+```
+
+
+We can try to write our own code which will performe translation of DNA sequence to protein.
+
+In order to do that, we use information about genetic code.
+
+```{r}
+GENETIC_CODE 
+```
+
+```{r}
+GENETIC_CODE [["TTT"]] # here is how substract information about amino acid coded by codon TTT
+```
+
+```{r}
+protein = "" 
+
+for(i in seq(1, length(DNA_seq_1), 3)){ # we will read DNA sequence in codons (triplets of nucleotides) in the loop
+    
+    codon = subseq(DNA_seq_1, i, i+2) # storage of codon (start: ith position, end: ith + 2 position)
+    # or codon = DNAseq[i, i + 2]
+    
+    codonString = toString(codon) # we have to tranform DNAString to string
+    amino_acid = GENETIC_CODE [[codonString]] # turning codon into amino acid
+    protein = paste(protein, amino_acid, sep = "") # writing amino acids into protein 
+}
+
+protein
+#AAString(protein)
+```
+
+3. SEARCHING FOR MOTIFS
+
+Finding occurences of given pattern in chosen biological sequence is the next tasks. 
+
+```{r}
+matchPattern("CGC", my_first_dna_string) # function matchPattern gives positions (start, end and width) of the pattern (motif)
+```
+
+```{r}
+matchPattern("CGC", my_first_dna_string, max.mismatch = 1) # among other things, it is possible to define maximal number of mismatches
+```
+
+
+```{r}
+countPattern("CGC", my_first_dna_string) # if we only want to know number of occurences of chosen pattern, we use function countPattern
+```
+
+
+Task no. 3
+
+Find position on the motif "GGT" in the DNA_seq_1 and its reverse. Maximal number of mismatches is 1. 
+
+```{r}
+motif = DNAString("GGT") # defining motif as DNA string
+
+max.mismatch = 1 # defining maximal number of mismatches
+
+fwd = matchPattern(motif, DNA_seq_1, max.mismatch = max.mismatch) # finding motif position in forward strand
+
+DNAseq_rev = reverse(DNA_seq_1) # storing reverse strand
+
+rev = matchPattern(reverse(motif), DNAseq_rev, max.mismatch = max.mismatch) # finding motif position in reverse strand
+
+complete = c(fwd, rev) # merging two results
+complete
+```
+
+
+Task no. 4
+
+Find the open reading frames in the DNA sequence: ATGCAATGGGGAAATGTTACCAGGTCCGAACTTATTGAGGTAGACAGATTTAA.
+
+Each open reading frame starts with start codon and ends with stop. For this task, we must first find positions of start and stop codons. 
+
+```{r}
+
+# function for finding positions of start codon:
+
+findStartCodons = function(sequence){
+    codon = "ATG" # defining start codon 
+    occurences = matchPattern(codon, sequence)
+    positions = start(occurences) # open reading frame starts with first position of start codon, so we want to store only this information
+    sorted_positions = sort(positions) # sort positions (in ascending order)
+    return(sorted_positions ) # function output
+}
+
+
+# similary, function for finding positions of stop codons:
+
+findStopCodons = function(sequence){
+    codons = c("TAA", "TAG", "TGA") # defining stop codons
+    stop_codon_positions = c() # defining an empty vector
+    
+    for (codon in codons){ # loop: finding position of each of the three codons
+        occurences = matchPattern(codon, sequence)
+        positions = start(occurences) # open reading frame ends with first position of stop codon, so we want to store only this information
+        stop_codon_positions = c(stop_codon_positions, positions) # storing positions in vector called stop_codon_positions
+    }
+    
+    sorted_stop_codon_positions = sort(stop_codon_positions)
+    return(sorted_stop_codon_positions)
+}
+```
+
+```{r}
+DNA_seq_2 = DNAString("ATGCAATGGGGAAATGTTACCAGGTCCGAACTTATTGAGGTAAGACAGATTTAA")
+
+findStartCodons(DNA_seq_2)
+findStopCodons(DNA_seq_2)
+```
+
+
+```{r}
+findORF = function(sequence){
+    position_start = findStartCodons(sequence) # find positions of start codons
+    position_stop = findStopCodons(sequence) # find positions of stop codons
+    
+    
+    orfstarts = c() # vector with start positions of orfs
+    orfstops = c() # vector with end positions of orfs
+    orflengths = c() # vector with lengths of orfs
+    
+
+    if (length(position_start) >= 1 && length(position_stop) >= 1){ # if we find more than one start and more than one stop position
+        
+        for (start in position_start){
+            start_used = FALSE # first we mark start codon as unused
+            
+            for (stop in position_stop){
+                if ((stop - start)%% 3 == 0){ # finding open reading frame: length between first position of stop codon and first position of start codon devided by 3 is 0 (because codons are triplets of nucleotides)
+                    
+                    start_used = TRUE # once we find reading frame, start is marked as used
+                    
+                    orfstarts = c(orfstarts, start) # we want to store start positions of orfs
+                    orfstops = c(orfstops, stop) # end positions
+                    orflengths = c(orflengths, stop - start) # and length
+                
+                }
+                if(start_used == TRUE){ # if we already used the start codon, that start codon can not longer be used for finding open reading frames
+                    break() # and we end the loop
+                }
+            }
+            
+        }
+   
+    return(list(orfstarts, orfstops, orflengths)) # output is a start, end and length of orfs
+        
+    }
+}
+```
+
+
+```{r}
+findORF(DNA_seq_2)
+```
+
+
+4. THE DISTANCE BETWEEN TWO SEQUENCES
+
+
+We will ilustrate distance problem on the folowing DNA sequences (s1 and s2):
+
+```{r}
+s1 = DNAString("ACTGTACCAGAATCGCTATTAGCCCACCTTAGGCGAGTGAAATAACCAAATAAACAAGTGGTGAGGGGAATTGTCCCCACCGTTGCGTTTATGGAGGGGGTGGAAGTGGCCACGAACTGCCAGGTGTCGCCAAACGGAAGACTTCGGGCTTTAGATCCGACTTAACTAACATTTTTCCACCATGAAAGGAGCAATTCAAAGCAACGTAAGGTACTTGCCTGGCCAGGTTGATAAAAGATGCGGACGTCTGATGATGTACGATGATCTTGGCGAGTCAAACCCGGGGACCCCGAGCCGTGACCTAGAGATTGCAATACAGTAAGTAGCCAGGAAAGGAGGATACGATATAAATTAGGGTCACTGTACCCGTTCCGCCTTTCTGCGGCCAAAGACCCGCACGACACATGGACGCCACAGAGGCTATTTGGACCGATGACTCAGGATCATCAAGGGCGACGACGTTAGTCAGTTATATCTGACATTGGATATGTTATAAATAAAACTGGTAACCCACAACGATCCCGGTAGTGGGGACACTGGCCAGGCTTCTAAGCAGATGCGAGGCACAGACACAAACCGGCCGTATGTCAGAGGCAGTACTGAAGTCTAACTTTATCCACGGCAGACGCGTTACATGGCAATCTTGAGCGGGGCGAAGTTAGAGACGTTAAGCTATATGAAACACACTCGGCGTAGCCAATAGCCCATCTGCCTCATAAGGATGGCTGGTTCATTTGTAAAATACTGTATCAGGCGGGGGTAACCTCCCGCGCTCAGGTAATATAATGAGACTGGTACCCATAACACGTTTTCGTCAGTAATAAAAGCGCGATCATTCAAGGGGACGATAGCAGACCTTCAATGCGGAATGGTTTTGCGCCTCTAATAACTGAGAGCACTATAATAGAAGTGAGTGTATTGTTATGCCATCCT")
+```
+
+
+```{r}
+s2 = DNAString("ACTGGAGCGAACTGGACATCAACCCTACTAAGGGAAGAAAATTGGAATAATCATCAGGTACTGAGAACACACGACCCCACCGTTGAGGTTTCGACAGCTTGAATTCTTACAAGGGCTAGCCGTTGCTGGCTAGCCATTTGTCAGAGTGTCTAAGAGCAGACTAAACTACCCTCGTTCCTATATAAACGAAGCTACTACCAGCAAGGTCCGGAACGCAACTCTCAGGATTGATGGGATGTGCACATTTCGTTTGGAGTTGCCGGATAGACGCTCGCAATCCTCTTCGACCACACGGAATGACGCGCCGGTCGCTCCAAATATAGTAGCCCGGGGCGGAAGAGGCGAAACTATATCAGCTTCCGGAACAGATGTCGTTTCTATGGCGCCTTCAAAGAGTGCGACGCCATGCAATCGTACATGCGCCTAGAACTCCTGGATGAGGATCTTTAAGAACGACTGGGTAAGCTAGATACATTTCAGTCTGGTTATGGTCTAAGTAGAACAGGTAACCCATGTACATTCAAATGTATGAGTGCCGGTCCATGCTTATCGGTTAACATGACCAACATCGAAACTATGGTGCGAGTTTAAGTGCAATACCAAAGGCCAAATGAGCGCACTCCATAGGCTGACCCGCATAATAATGGTCTGGTCAAAGGATTAGAAGTAAGATGCTACGATAAGCTTCCCGCGGTCACGATGACCCTTTAGCCTCACCTTATTAAATGGCTAAATTTTTTATAACTGCTGCGGGCAGGGGAACCCAGCCGAGCTCCGTGGATTTACCGAGGCCGCTTACAGTCACATGTTTATGTCAACAACTTGTGCTCGAGTATGCGAGGGCCCTATTGAATCTCGGAAATGTGGCTTGGTTGTCGACCTCTCTAGTCCCGTAGTTCTCAACTCGGAATGGATGGCTGAAACATACGTCCA")
+```
+
+
+First, we will write the function which computes Hamming distance between two sequences:
+
+```{r}
+hamming_distance = function (sequence1, sequence2){    
+    dis = 0 # distance is inicialy zero
+    
+    for (i in 1:length(s1)){
+        if (s1[i] != s2[i]){ # we compere the same positions of two different sequences
+            dis = dis + 1 # if they are different, distance increases by 1
+        }
+    }
+    return(dis)
+}
+
+result_ham_distance = hamming_distance(s1, s2)
+result_ham_distance
+```
+
+However, we can also use function stringDist from the package Biostrings to compute Hamming distance:
+
+```{r}
+ss = DNAStringSet(list(s1, s2))
+stringDist(ss, method = "hamming") # we have to define method as hamming
+```
+
+
+```{r}
+stringDist(ss, method = "levenshtein") #other comonly used method is levenshtein
+```
+
+
+Task no. 5
+
+Find the distance between two sequences if transition are penalized by 1 and transversions by 2.
+
+```{r}
+pu = DNAStringSet(c("A","G")) # defining purin bases
+py = DNAStringSet(c("C","T")) # defining pyrimidin bases
+
+
+tt_distance = function (s1, s2){    
+    dis = 0 # distance is incially zero
+    for (i in 1:length(s1)){
+        b1 = s1[i] # base at ith position in first sequence
+        b2 = s2[i] # base at ith position in first sequence
+        
+        if (b1 != b2){ # if bases are differnt at the same position:
+            
+            if ( ((b1 %in% pu) && (b2 %in% pu)) || ((b1 %in% py) && (b2 %in% py))){ # if first and second base is purin OR                                                                                                                 first and second base is pyrimidin, it is transition
+                dis = dis + 1 # and it is penalized by 1
+            }
+            else{
+                dis = dis + 2 # else, it is transversion and it is penalized by 2 
+            }
+           
+        }
+    }
+     
+    return(dis)
+}
+
+result_tt_distance = tt_distance(s1, s2)
+result_tt_distance
+```
+
+
+Global alingment is method which tries to align all bases of two sequences. 
+
+```{r}
+matrix = nucleotideSubstitutionMatrix(match = 1, mismatch = -1, baseOnly = TRUE) # we can define scoring system in substitution matrix: for example, we can score matches with +1 and mismatches with -1
+
+
+# global alingment of sequences ACTCGCAC and ATAGAC
+
+pairwiseAlignment(pattern = "ACTCGCAC", subject = "ATAGAC", gapOpening = -1, substitutionMatrix = matrix, type = "global") # for global alingment, we use pairwiseAlignment function (type = "global")
+
+# pattern can be multiple sequences, and subject is one sequence
+```
+
+
+We can also used pairwiseAlignment function to solve the 5th task. However, we must define substitution matrix with given scoring system. 
+
+```{r}
+tt_matrix = matrix(data = c(0, 2, 1, 2,
+                            2, 0, 2, 1,
+                            1, 2, 0, 2,
+                            2, 1, 2, 0), nrow = 4, ncol = 4) # matrix is defined by the data and its dimentions: number of rows (nrow) and columns                                                                (ncol)
+
+rownames(tt_matrix) = c("A", "C", "G", "T") 
+colnames(tt_matrix) = c("A", "C", "G", "T")
+
+tt_matrix
+```
+
+```{r}
+pairwiseAlignment(s1, s2, gapOpening = 10000000, substitutionMatrix = tt_matrix, type = "global") # we choose global aligment and high gap opening penatly to insure that gaps are not formed (because we want to compare bases at the same positions)
+```
+
+The score is the same as in previous solution. 
+
+5. GENOMIC RANGES
+
+Biological sequence can also be presented in ranges. Biological question can reflect range-based quaeries. For example, we can propose a question 
+which of given motive is the closest to the expressed gene. 
+
+We can diferenetiate IRanges and GRanges.
+
+Each range has start and end coordinates and presents closed interval.
+
+Here are few examples of how to define object of IRanges type. 
+
+```{r}
+ir1 = IRanges(start = 1:10, width = 10:1) # here we define ranges with the start coordinates and with the width
+ir1
+```
+
+```{r}
+ir2 = IRanges(start = c(1, 25), width = 3) # one width can also be defined for several ranges
+ir2
+```
+
+
+```{r}
+ir3 = IRanges(start = c(1, 1, 4, 10), end = c(6, 3, 8, 10)) # here we define ranges with the start and end coordinates
+ir3
+```
+
+
+Now, we will perform several operation on the range ir3. Following operations represent inter-interval operations. 
+
+```{r}
+reduce(ir3, min.gapwidth = 1) # merging redundant ranges
+```
+
+
+```{r}
+disjoin(ir3) # fragmenting into the widest ranges where the set of overlapping ranges is the same
+```
+
+```{r}
+gaps(ir3) # ranges that fall between the ranges in the input
+```
+
+GRanges are used to store genomic intervals. Genomic coordinates consist of chromosome(sequence name), position, and potentially
+strand information.
+
+```{r}
+gr1 = GRanges(c("seq1", "seq2", "seq3"), 
+              IRanges(start = c(15, 18, 1233), width = 2), # we define ranges with IRanges (start and width is defined in this case)
+              strand = c("-", "+", "+"))
+
+gr1
+```
+
+
+Task no. 6
+
+Find the number and position of occurrences of the patern in "AGTGCT" in genome of the species E. coli. 
+
+BSgenome and other genome data packages	provide	full genome	sequences for many species.
+
+```{r}
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("BSgenome.Ecoli.NCBI.20080805") # load the genome data package
+require(BSgenome.Ecoli.NCBI.20080805)
+```
+
+```{r}
+Ecoli_genome = Ecoli$NC_000913 # we will use strain K-12 substrain MG1655 (defined by the numver NC_000913) at store it in variable Ecoli_genome
+
+Ecoli_genome
+```
+
+```{r}
+freqPattern = countPattern("AGTGCT", Ecoli_genome) # number of occurrences 
+freqPattern
+```
+
+```{r}
+positionPattern = matchPattern("AGTGCT", Ecoli_genome) # with matchPattern we will get position of the pattern
+
+positionPattern
+```

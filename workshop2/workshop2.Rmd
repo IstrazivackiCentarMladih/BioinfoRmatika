@@ -1,0 +1,264 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+In this exercise we try to identify operons in E. coli by searching for binding sites of the sigma70 binding factor, which is necessary for the initiation of transcription in most E. coli operons.
+
+The binding site is defined by two motifs (10 and 35 nucleotides upstream from the START codon, ATG) and a spacer 13-19 nucleotides long.
+
+The position weight matrices for this motif were taken from:
+
+http://2013.igem.org/Team:XMU_Software/Project/promoter
+
+
+Loading the required library (Biostrings) and the genomes of several strains of E. coli
+
+```{r}
+require(Biostrings)
+require(BSgenome.Ecoli.NCBI.20080805)
+```
+
+Loading the genome of E. coli, strain K-12 substrain MG1655
+
+```{r}
+eColi = Ecoli$NC_000913
+```
+
+
+Loading the motifs - tataat is the (-10) motif, and ttgaca is the (-35) motif. The variables are named after the consensus sequence for the motif.
+
+```{r}
+#loading the matrices with frequency of occurence of each nucleotide at positions in the motif from files
+#rownames = 1 means that the first line of the file will be the names of the rows
+
+tataat = read.table("TATAAT.csv", row.names = 1)
+ttgaca = read.table("TTGACA.csv", row.names = 1)
+
+tataat
+
+#converting these matrices into probability matrices
+
+tataatPWM = PWM(as.matrix(tataat[-c(1, 2)]))
+ttgacaPWM = PWM(as.matrix(ttgaca[-c(1, 2, 3)]))
+
+tataatPWM
+```
+
+
+Looking for the positions of the motifs in the genome using the function matchPWM:
+
+minscore is the minimum score a match needs to have in order to be counted
+It was given here as the percentage of the highest possible score
+
+
+```{r}
+#define minscore cutoff
+minscore = "80%"
+
+#find positions
+tataatPos = matchPWM(pwm = tataatPWM, subject = eColi, min.score = minscore)
+ttgacaPos = matchPWM(pwm = ttgacaPWM, subject = eColi, min.score = minscore)
+
+#look at the acquired result
+tataatPos
+```
+
+The function matchPWM returns a data structure called "Views" which contains the start and end position of each match.
+
+Next, we need to find the positions in the genome where the matches found are such that ttgacaPos is upstream from tataat, and there are 13-19 nucleotides in between them. We will do this by filtering the matches we have found.
+
+We will use the function findOverlaps. The option minoverlap set to 0 will allow us to find positions which are not overlapping (since in fact we want them to be at least 13 nt apart), and maxgap = 19 will filter the positions which are more than 19 nt apart.
+
+```{r}
+adjacentMotifs = findOverlaps(query = tataatPos, subject = ttgacaPos, maxgap = 19, minoverlap = 0)
+adjacentMotifs
+```
+
+This function (findOverlaps) returns a structure in which the indices of the query and subject "Views" objects which are found to have "overlaps" (in fact with our parameters they are no more than 19 nt apart) are listed in the same row.
+In this step we only took care that the motifs aren't more than 19 nt apart. The next step is to make sure that they are at least 13 nt apart and that ttgaca is upstream from tataat.
+
+To do this we need to get the ranges (in variables tataatPos and ttgacaPos) from the indices (in variable adjacentMotives).
+When working with "Hits" objects, we can extract the query and subject hit indices using functions queryHits and subjectHits. These functions return arrays of numbers (no special object type)
+
+```{r}
+tataatIndices = queryHits(adjacentMotifs)
+ttgacaIndices = subjectHits(adjacentMotifs)
+```
+
+
+Now we want to get the ranges corresponding to these indices, so we will subset tataatPos and ttgacaPos with the indices.
+
+```{r}
+tataatPosFiltered = tataatPos[tataatIndices]
+ttgacaPosFiltered = ttgacaPos[ttgacaIndices]
+
+#note that there are more "filtered" positions than original ones
+#this is because, with the given minscore cutoff, so many motifs are found that one tataat motif can be next to multiple ttgaca motives at this step in the filtering process
+length(tataatPosFiltered)
+length(tataatPos)
+
+#same goes for the ttgaca motif
+length(ttgacaPosFiltered)
+length(ttgacaPos)
+```
+
+Now that we have acquired the indices of the ranges which are not more than 19 nt apart, we will use these ranges to further filter the range-pairs to make sure ttgaca is upstream from tataat and that they are at least 13 nt apart.
+
+Both these conditions will be filtered in one step.
+
+If we look at the following scheme we can see that the difference between tataat-start and ttgaca-end should be between 13 and 19 nucleotides.
+
+
+start         end__13-19__start        end
+      TTGACA         nt         TATAAT          
+
+
+Positions in the genome are counted from left to right. Subtracting the start of tataat from the end of ttgaca will allow us to filter the right motifs: the result should be greater than zero (which ensures that ttgaca is upstream from tataat) and greater than 13 (we have already ensured that the motifs are no more than 19 nt apart).
+
+It follows that we need to filter the pairs of ranges for which the difference between the start of tataat and the end of ttgaca is equal to or larger than 13.
+
+
+```{r}
+#first we will take the start positions of tataat and end positions of ttgaca from the previously filtered ranges
+tataatStart = start(tataatPosFiltered)
+ttgacaEnd = end(ttgacaPosFiltered)
+
+#this command will give us a logical vector (passFilter) in which the positions which pass the filter will be marked as TRUE
+passFilter = tataatStart - ttgacaEnd >= 13
+
+```
+
+
+Using the logical vector passFilter, we will construct a new Ranges object containing our presumed sigma70 binding sites, which are defined as starting at the start of ttgaca and ending at the end of tataat.
+
+```{r}
+
+#taking the start positions of ttgaca sites that passed all filters
+sigmaStart = start(ttgacaPosFiltered[passFilter])
+#taking the end positions of tataat sites that passed all filters
+sigmaEnd = end(tataatPosFiltered[passFilter])
+
+
+#constructing a new Ranges object 
+promotorPos = IRanges(start = sigmaStart,
+                      end = sigmaEnd)
+
+```
+
+Now we have found some positions for which we assume that they are sigma70 binding sites, which means they are promoter sequences.
+Let us look at how many we have found:
+
+```{r}
+length(promotorPos)
+```
+
+This is a very large number. The E. coli genome doesn't have nearly as many operons, so we might conclude that some of our filtering criteria were too lenient. We can play around with some of them, like the minscore cutoff, later. Let us now check if we at least caught most of the promoters really present in the genome with this large number of predicted promoter sites.
+
+To do this we will use the annotation for the genome of this particular E. coli strain downloaded from NCBI.
+
+https://www.ncbi.nlm.nih.gov/nuccore/NC_000913.3
+
+
+We will load the annotation using the read.table() function.
+comment.char sets the character which will denote a line is a comment line. and these lines will not be loaded into the table.
+sep sets the denominator
+quote = "" disables R from adding quotes to columns read as character types, which can result in unwanted behavior
+stringsAsFactors = F disables R from treating strings as factors, which can be troublesome if we are switching between types of data structures or merging tables
+
+```{r}
+
+annotation = read.table("sequence.gff3", comment.char = "#", sep = "\t", quote = "", stringsAsFactors = F)
+annotation
+```
+
+If we look at what we got, we can see that come of the annotated features are genes, some are CDS (coding sequences), some are mobile genetic elements etc.
+If we look at the specification of teh GFF file format online (the loaded table is taht type of file) we will learn that the 4th and 5th column contaion the start and end of the feature.
+
+We will filter the annotation so that we only get information for the coding sequences (CDS) because we are not interested in non-coding genes.
+We will also only take the start and end positions of the features.
+
+When subsetting a table or dataframe in R, we will use the [] operator. In teh first positions we will put the filtering criterium for the first dimension (the rows), and in teh second position the filtering criterium for the second dimension (teh columns).
+
+We will only take those rows for which V3 (type of feature) is "CDS", and also only genes on the "+" strand (since we were also only searching for motifs on teh "+, strand"). The logical expression will be:
+annotation$V7 == "+" & annotation$V3 == "CDS"
+7th column is equal to "+" AND 3rd column is equal to "CDS"
+
+As for the columns, we will take the 4th and 5th columns which contain the start and end positions of the features.
+c(4,5)
+
+```{r}
+#putting teh start and end positions of CDS into teh variable genes
+genes = annotation[annotation$V7 == "+" & annotation$V3 == "CDS", c(4,5)]
+
+#we need to transform this variable into a Ranges object in order to work with it further
+#we will use the first column of genes as teh start positions and the second column as the end positions in teh arnges object
+#we use [[]] instead of [] for subsetting because this way we will get a vector (using [] we would get a list, with one element, a vector)
+genePos = IRanges(start = genes[[1]], end = genes[[2]])
+```
+
+
+Next, we will use very similar command as before to find how many of our identified promoter position are upstream of annotated CDSs. They should also be around 10 nt upstream from teh start of teh CDS.
+
+Here again we can play with both the maximum distance allowed between the presumed promoter site and the CDS, as well as the minimum distance between them
+
+```{r}
+
+maxDistance = 20
+minDistance = 9
+
+#we will look for overlaps between the promoters and the CDSs, requiring no minimup overlap and allowing no more than maxDistacen distance between them
+geneOverlaps = findOverlaps(query = genePos, subject = promotorPos, maxgap = maxDistance, minoverlap = 0)
+
+```
+
+As before, we will make sure that the promoter is upstream from the CDS and that the minimum distance between them is at least minDistance in 1 step
+
+
+start          end__10__start        end
+     promoter       nt         CDS    
+     
+We will substract the start of the CDS with the end of the promoter ranges, and the number we get will have to be positive and greater than minDistance
+
+```{r}
+
+cdsIndices = queryHits(geneOverlaps)
+promIndices = subjectHits(geneOverlaps)
+
+genePosFiltered = genePos[cdsIndices]
+promotorPosFiltered = promotorPos[promIndices]
+
+geneStart = start(genePosFiltered)
+promotorEnd = end(promotorPosFiltered)
+
+
+pass2 = geneStart - promotorEnd >= minDistance
+
+
+```
+
+Now we can look at what we have:
+
+```{r}
+#all presumed sigma70 binding sites
+length(promotorPos)
+
+#binding sites upstream and close to annotated gene
+sum(pass2)
+
+#annotated coding genes
+dim(geneStart)
+```
+
+Of the 145 999  presumed sigma70 binding sites, 764 have been found to be upstream and close to an annotated gene.
+There have been 2120 annotated genes on the "+" strand in total.
+However, genes in bacteria are organized into operons, and each operons only has 1 promoter.
+
+In conclusion, this method might have captured most of the TRUE sigma70 binding sites, but it has a lot of false positives.
+
+We should either make the filtering criteria (minscore, minDistance, maxDistance) more strict or combine this approach with ORF finding.
+
+
+
