@@ -6,6 +6,7 @@ Repozitorij datoteka s radionice Istraživačkog centra mladih "BioinfoRmatika":
 Voditeljice:
 
 Magdalena Valenta, mag. biol. mol.
+
 Zoe Jelić Matošević, mag. biol. mol.
 
 Program je podržan od strane Meet and Code inicijative
